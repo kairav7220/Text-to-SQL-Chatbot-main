@@ -1,9 +1,33 @@
 import os
 import re
+import sqlite3
+import pandas as pd
 from dotenv import load_dotenv
 import streamlit as st
 
 load_dotenv()
+
+CSV_TABLES = {
+    "Data_CSV/Customers.csv": "Customers",
+    "Data_CSV/sales_order.csv": "sales_order",
+    "Data_CSV/Products.csv": "Products",
+    "Data_CSV/Regions.csv": "Regions",
+    "Data_CSV/State_Regions.csv": "State_Regions",
+    "Data_CSV/2017_Budgets.csv": "Budgets_2017",
+}
+
+def ensure_database():
+    db_path = "text_to_sql.db"
+    conn = sqlite3.connect(db_path)
+    existing = conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
+    existing_tables = {row[0] for row in existing}
+    for csv_file, table in CSV_TABLES.items():
+        if table not in existing_tables and os.path.exists(csv_file):
+            df = pd.read_csv(csv_file)
+            df.to_sql(table, conn, if_exists="replace", index=False)
+    conn.close()
+
+ensure_database()
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
