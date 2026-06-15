@@ -6,4 +6,4 @@ langchain-groq
 langchain-google-genai
 ragas
 python-dotenv
-google-cloud-aiplatform
+langchain-google-vertexai
