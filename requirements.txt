@@ -1,6 +1,6 @@
 streamlit
 langchain-core
-langchain-community
+langchain-community==0.3.1
 langchain-huggingface
 langchain-groq
 langchain-google-genai
