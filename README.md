@@ -13,10 +13,9 @@
   <a href="#architecture">Architecture</a> ·
   <a href="#quick-start">Quick Start</a> ·
   <a href="#usage">Usage</a> ·
+  <a href="#code-highlights">Code Highlights</a> ·
   <a href="#evaluation">Evaluation</a> ·
-  <a href="#project-structure">Structure</a> ·
-  <a href="#comparison">Comparison</a> ·
-  <a href="#contributing">Contributing</a>
+  <a href="#project-structure">Structure</a>
 </p>
 
 <p align="center">
@@ -31,14 +30,7 @@
 
 ---
 
-## Features
-
-- **Natural Language → SQL** — Ask in plain English, get SQL queries + query results
-- **Agentic & Chain Modes** — LangGraph ReAct agent (tool-calling) + LangChain LCEL chain
-- **Multi-LLM Support** — Groq (Llama 3.3 70B) + Google Gemini (2.0/2.5 Flash)
-- **RAGAS Evaluation** — Built-in quality scoring (Context Precision, Helpfulness Rubrics)
-- **Streamlit UI** — Chat interface with live schema viewer and evaluation dashboard
-- **CSV → SQLite Pipeline** — Zero-config database setup from CSV files
+Query a SQL database using natural language. Built with LangChain, LangGraph, Groq LLM, and RAGAS evaluation.
 
 ## Architecture
 
@@ -60,15 +52,6 @@ flowchart LR
   Eval --> Dashboard["Evaluation Dashboard"]
 ```
 
-| Component | Stack |
-|---|---|
-| **Frontend** | Streamlit (chat + eval tabs) |
-| **Orchestration** | LangChain LCEL + LangGraph `create_react_agent` |
-| **LLM** | Groq `llama-3.3-70b-versatile`, Gemini `2.0-flash` / `2.5-flash` |
-| **Database** | SQLite (auto-seeded from CSVs) |
-| **Evaluation** | RAGAS (Context Precision, Rubrics-based Helpfulness) |
-| **Embeddings** | `sentence-transformers/all-MiniLM-L6-v2` |
-
 ## Quick Start
 
 ```bash
@@ -84,71 +67,64 @@ GROQ_API_KEY="gsk_..."
 GOOGLE_API_KEY="AIza..."
 ```
 
-Run the app:
-
 ```bash
 streamlit run app.py
 ```
-
-Ask "What was the budget of Product 12?" in the chat — you get the SQL and the result.
 
 ## Usage
 
-### Streamlit App
-
 ```bash
-streamlit run app.py
+streamlit run app.py   # Chat + Evaluation UI
+python 1.py            # Gemini chain (single query)
+python 2.py            # Groq chain + RAGAS on 5 queries
+python create_db.py    # Reload CSVs into SQLite
 ```
 
-Two tabs:
-- **Chat** — conversational interface, shows SQL + result per message
-- **Evaluate** — runs 5 benchmark queries, scores via RAGAS metrics
+## Code Highlights
 
-### Script Mode
-
-```bash
-python 1.py   # Gemini LCEL chain (query "Geiss Company line total")
-python 2.py   # Groq chain + RAGAS evaluation on 5 questions
+**Prompt engineering that strips markdown fences** (`app.py:83-91`):
+```python
+def run_query(question: str):
+    raw = sql_chain.invoke({"question": question}).strip()
+    if "```" in raw:
+        match = re.search(r"```(?:sql)?\s*(.*?)\s*```", raw, re.DOTALL | re.IGNORECASE)
+        sql = match.group(1).strip() if match else raw
+    else:
+        sql = raw
+    sql = " ".join(sql.split())
+    result = db.run(sql)
+    return sql, result
 ```
 
-### Agentic Mode
-
-The `create_react_agent`-based agent uses a full SQL toolkit (list tables, inspect schema, query, double-check) to reason over multiple steps before producing the answer. See the notebook on LangGraph integration.
-
-### CSV → Database
-
-```bash
-python create_db.py
+**Self-seeding database from CSVs** (`app.py:19-29`):
+```python
+def ensure_database():
+    conn = sqlite3.connect("text_to_sql.db")
+    existing = conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
+    existing_tables = {row[0] for row in existing}
+    for csv_file, table_name in CSV_TABLES.items():
+        if table_name not in existing_tables and os.path.exists(csv_file):
+            df = pd.read_csv(csv_file)
+            df.to_sql(table_name, conn, if_exists="replace", index=False)
 ```
 
-Auto-loads CSVs from `Data_CSV/` into a local SQLite database.
+**LangGraph agent with 4 SQL tools** — list tables, inspect schema, query, double-check. Agent reasons over multiple steps before answering.
 
-## When to Use
+**RAGAS evaluation built into the UI** — 5 benchmark queries scored on Context Precision (0-1) and Helpfulness Rubrics (1-5) with a single button click.
 
-| Do | Don't |
+## Evaluation
+
+| Metric | Score |
 |---|---|
-| Ad-hoc analytics on structured data | Complex multi-database joins |
-| Prototyping NL-to-SQL for your domain | Production workloads (no auth, rate-limiting) |
-| Learning LangChain / LangGraph patterns | Real-time streaming queries |
-| Benchmarking LLM SQL generation accuracy | Sensitive data (API keys in `.env`, no encryption) |
-
-## Comparison
-
-| Feature | This Project | LangChain SQL Agent | SQLAlchemy + Hand-coded |
-|---|---|---|---|
-| UI | ✅ Streamlit | ❌ CLI only | ❌ |
-| RAGAS Evaluation | ✅ Built-in | ❌ | ❌ |
-| Agentic Reasoning | ✅ LangGraph | ✅ | ❌ |
-| Multi-LLM | ✅ Groq + Gemini | ✅ | ❌ |
-| CSV → DB Seeding | ✅ Auto | ❌ | ❌ |
-| Setup Time | ~2 min | ~15 min | ~30 min |
+| Context Precision | 1.0000 |
+| Helpfulness (Rubrics) | 3.80 / 5.00 |
 
 ## Project Structure
 
 ```
 Text-to-SQL-Chatbot-main/
 ├── app.py                  # Streamlit app (chat + eval)
-├── 1.py                    # Gemini LCEL chain (minimal)
+├── 1.py                    # Gemini LCEL chain
 ├── 2.py                    # Groq chain + RAGAS script
 ├── create_db.py            # CSV → SQLite migration
 ├── Data_CSV/               # Source CSV files (7 tables)
@@ -156,17 +132,8 @@ Text-to-SQL-Chatbot-main/
 ├── requirements.txt        # Python dependencies
 ├── runtime.txt             # Python 3.11.5
 ├── .gitignore
-└── LICENSE                 # MIT
+└── LICENSE
 ```
-
-## Evaluation
-
-Sample RAGAS results (Groq Llama 3.3 70B on 5 benchmark queries):
-
-| Metric | Score |
-|---|---|
-| Context Precision | 1.0000 |
-| Helpfulness (Rubrics) | 3.80 / 5.00 |
 
 ## License
 
