@@ -129,7 +129,6 @@ Text-to-SQL-Chatbot-main/
 ├── Data_CSV/               # Source CSV files (7 tables)
 ├── data_dump/              # Additional CSV exports
 ├── requirements.txt        # Python dependencies
-├── runtime.txt             # Python 3.11.5
 ├── CONTRIBUTING.md         # Contribution guide
 ├── llms.txt                # AI assistant context
 ├── .gitignore
