@@ -13,9 +13,9 @@
   <a href="#architecture">Architecture</a> ·
   <a href="#quick-start">Quick Start</a> ·
   <a href="#usage">Usage</a> ·
-  <a href="#code-highlights">Code Highlights</a> ·
   <a href="#evaluation">Evaluation</a> ·
-  <a href="#project-structure">Structure</a>
+  <a href="#project-structure">Structure</a> ·
+  <a href="#comparison">Comparison</a>
 </p>
 
 <p align="center">
@@ -30,7 +30,16 @@
 
 ---
 
-Query a SQL database using natural language. Built with LangChain, LangGraph, Groq LLM, and RAGAS evaluation.
+Natural language to SQL query chatbot using LangChain, LangGraph, Groq LLM, and RAGAS evaluation.
+
+## Features
+
+- **Natural Language → SQL** — Ask in plain English, get SQL queries + query results
+- **Agentic & Chain Modes** — LangGraph ReAct agent (tool-calling) + LangChain LCEL chain
+- **Multi-LLM Support** — Groq (Llama 3.3 70B) + Google Gemini (2.0/2.5 Flash)
+- **RAGAS Evaluation** — Built-in quality scoring (Context Precision, Helpfulness Rubrics)
+- **Streamlit UI** — Chat interface with live schema viewer and evaluation dashboard
+- **CSV → SQLite Pipeline** — Zero-config database setup from CSV files
 
 ## Architecture
 
@@ -51,6 +60,15 @@ flowchart LR
   UI --> Eval["RAGAS Evaluator<br/>(Context Precision + Helpfulness)"]
   Eval --> Dashboard["Evaluation Dashboard"]
 ```
+
+| Component | Stack |
+|---|---|
+| **Frontend** | Streamlit (chat + eval tabs) |
+| **Orchestration** | LangChain LCEL + LangGraph `create_react_agent` |
+| **LLM** | Groq `llama-3.3-70b-versatile`, Gemini `2.0-flash` / `2.5-flash` |
+| **Database** | SQLite (auto-seeded from CSVs) |
+| **Evaluation** | RAGAS (Context Precision, Rubrics-based Helpfulness) |
+| **Embeddings** | `sentence-transformers/all-MiniLM-L6-v2` |
 
 ## Quick Start
 
@@ -80,44 +98,25 @@ python 2.py            # Groq chain + RAGAS on 5 queries
 python create_db.py    # Reload CSVs into SQLite
 ```
 
-## Code Highlights
-
-**Prompt engineering that strips markdown fences** (`app.py:83-91`):
-```python
-def run_query(question: str):
-    raw = sql_chain.invoke({"question": question}).strip()
-    if "```" in raw:
-        match = re.search(r"```(?:sql)?\s*(.*?)\s*```", raw, re.DOTALL | re.IGNORECASE)
-        sql = match.group(1).strip() if match else raw
-    else:
-        sql = raw
-    sql = " ".join(sql.split())
-    result = db.run(sql)
-    return sql, result
-```
-
-**Self-seeding database from CSVs** (`app.py:19-29`):
-```python
-def ensure_database():
-    conn = sqlite3.connect("text_to_sql.db")
-    existing = conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
-    existing_tables = {row[0] for row in existing}
-    for csv_file, table_name in CSV_TABLES.items():
-        if table_name not in existing_tables and os.path.exists(csv_file):
-            df = pd.read_csv(csv_file)
-            df.to_sql(table_name, conn, if_exists="replace", index=False)
-```
-
-**LangGraph agent with 4 SQL tools** — list tables, inspect schema, query, double-check. Agent reasons over multiple steps before answering.
-
-**RAGAS evaluation built into the UI** — 5 benchmark queries scored on Context Precision (0-1) and Helpfulness Rubrics (1-5) with a single button click.
-
 ## Evaluation
+
+Sample RAGAS results (Groq Llama 3.3 70B on 5 benchmark queries):
 
 | Metric | Score |
 |---|---|
 | Context Precision | 1.0000 |
 | Helpfulness (Rubrics) | 3.80 / 5.00 |
+
+## Comparison
+
+| Feature | This Project | LangChain SQL Agent | SQLAlchemy + Hand-coded |
+|---|---|---|---|
+| UI | ✅ Streamlit | ❌ CLI only | ❌ |
+| RAGAS Evaluation | ✅ Built-in | ❌ | ❌ |
+| Agentic Reasoning | ✅ LangGraph | ✅ | ❌ |
+| Multi-LLM | ✅ Groq + Gemini | ✅ | ❌ |
+| CSV → DB Seeding | ✅ Auto | ❌ | ❌ |
+| Response Speed | ⚡ ~1-3s (Groq) | ~3-5s | N/A |
 
 ## Project Structure
 
