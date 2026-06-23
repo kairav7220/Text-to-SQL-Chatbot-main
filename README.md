@@ -116,7 +116,7 @@ Sample RAGAS results (Groq Llama 3.3 70B on 5 benchmark queries):
 | Agentic Reasoning | ✅ LangGraph | ✅ | ❌ |
 | Multi-LLM | ✅ Groq + Gemini | ✅ | ❌ |
 | CSV → DB Seeding | ✅ Auto | ❌ | ❌ |
-| Response Speed | ⚡ ~1-3s (Groq) | ~3-5s | N/A |
+
 
 ## Project Structure
 
@@ -130,6 +130,8 @@ Text-to-SQL-Chatbot-main/
 ├── data_dump/              # Additional CSV exports
 ├── requirements.txt        # Python dependencies
 ├── runtime.txt             # Python 3.11.5
+├── CONTRIBUTING.md         # Contribution guide
+├── llms.txt                # AI assistant context
 ├── .gitignore
 └── LICENSE
 ```
