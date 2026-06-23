@@ -3,6 +3,12 @@
 </p>
 
 <p align="center">
+  <a href="https://text-to-sql-chatbot-main-qlt4z8jx8aewbafdybguyt.streamlit.app/" target="_blank">
+    <img src="https://img.shields.io/badge/Live_Demo-Streamlit-FF4B4B?logo=streamlit&logoColor=white" alt="Live Demo"/>
+  </a>
+</p>
+
+<p align="center">
   <a href="#features">Features</a> ·
   <a href="#architecture">Architecture</a> ·
   <a href="#quick-start">Quick Start</a> ·
