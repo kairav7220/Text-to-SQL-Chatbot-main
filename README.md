@@ -14,7 +14,7 @@
   <a href="#quick-start">Quick Start</a> ·
   <a href="#usage">Usage</a> ·
   <a href="#evaluation">Evaluation</a> ·
-  <a href="#project-structure">Structure</a> ·a
+  <a href="#project-structure">Structure</a> ·
   <a href="#comparison">Comparison</a> ·
   <a href="#contributing">Contributing</a>
 </p>
